@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Board Game Tour V10</title>
+    <title>Board Game Tour V11 (Self-Repair)</title>
     <style>
         :root {
             --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc; --secondary: #03dac6;
@@ -55,34 +55,12 @@
 
         /* CHECKBOXES MEJORADOS */
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        
         .check-item {
-            background: var(--card-bg); 
-            padding: 12px 5px; 
-            border-radius: 12px; 
-            border: 1px solid #444; 
-            cursor: pointer; 
-            user-select: none; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            width: 30%; /* 3 columnas */
-            flex-grow: 1;
-            text-align: center; 
-            min-height: 60px;
+            background: var(--card-bg); padding: 12px 5px; border-radius: 12px; border: 1px solid #444; 
+            cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            width: 30%; flex-grow: 1; text-align: center; min-height: 60px;
         }
-        
-        .check-item div {
-            font-size: 14px;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            padding: 0 5px;
-        }
-
+        .check-item div { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 5px; }
         .check-item.selected { background: var(--secondary); color: #000; border-color: var(--secondary); }
         .check-item.is-underdog { border: 1px dashed var(--underdog); color: var(--underdog); }
         .check-item.is-underdog.selected { background: var(--underdog); color: #000; border-style: solid; }
@@ -97,7 +75,6 @@
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 200; }
         .modal-content { background: var(--card-bg); padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
-        
         .loader { border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -229,7 +206,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // TUS CREDENCIALES
         const firebaseConfig = {
             apiKey: "AIzaSyB93kZK68MRZmMCP5RvGzHZKegmWbruM-E",
             authDomain: "the-grand-game-tour.firebaseapp.com",
@@ -245,7 +221,6 @@
         const DOC_ID = "main_tour_data";
         const docRef = doc(db, "boardgames", DOC_ID);
 
-        // VARIABLES GLOBALES
         window.state = null;
         
         const DEFAULT_CONFIG = { adminPassword: null, points: { S: { win: 25, play: 10 }, A: { win: 15, play: 5 }, B: { win: 7, play: 2 } } };
@@ -262,14 +237,22 @@
             { id: 'codenames', name: 'Codenames', tier: 'B', isCoop: true }
         ];
 
-        // --- FIREBASE SYNC ---
+        // --- FIREBASE SYNC CON AUTO-REPARACIÓN ---
         onSnapshot(docRef, (docSnap) => {
             const loading = document.getElementById('loading-screen');
             
             if (docSnap.exists()) {
                 window.state = docSnap.data();
                 
-                // Migración de Juegos en tiempo real
+                // AUTO-REPARACIÓN: Si existen los datos pero no los juegos, inyectarlos.
+                if (!window.state.games || !Array.isArray(window.state.games) || window.state.games.length === 0) {
+                    console.warn("Detectada base de datos corrupta (sin juegos). Reparando...");
+                    window.state.games = JSON.parse(JSON.stringify(GAMES_DB)); // Copia fresca
+                    window.saveStateToCloud(); // Guardar reparación
+                    return; // Esperar al siguiente snapshot
+                }
+
+                // Migración de Juegos Nuevos (si agregas más a GAMES_DB en el futuro)
                 if(window.state.games.length < GAMES_DB.length) {
                    let changed = false;
                    GAMES_DB.forEach(g => { 
@@ -285,31 +268,27 @@
                 document.getElementById('nav-bar').classList.remove('hidden');
                 document.getElementById('setup-modal').classList.add('hidden');
 
-                // Si no hay vista activa (recién carga), ir al dashboard
+                // Si no hay vista activa, ir al dashboard
                 if(document.getElementById('view-dashboard').classList.contains('hidden') && 
                    document.getElementById('view-log').classList.contains('hidden') &&
                    document.getElementById('view-roulette').classList.contains('hidden') &&
                    document.getElementById('view-admin').classList.contains('hidden')) {
                        window.switchView('dashboard');
                 } else {
-                    // Refrescar UI activa
                     window.renderLeaderboard(); 
                     window.populateGameSelect();
                     window.renderConfigTable();
                 }
 
             } else {
-                // DOC BORRADO O INEXISTENTE -> SETUP
                 loading.classList.add('hidden');
-                window.state = null; // Limpiar estado local
+                window.state = null;
                 window.showSetupModal();
             }
         });
 
         window.saveStateToCloud = async function() {
-            try {
-                await setDoc(docRef, window.state);
-            } catch (e) { alert("Error guardando en la nube: " + e.message); }
+            try { await setDoc(docRef, window.state); } catch (e) { alert("Error guardando: " + e.message); }
         }
 
         // --- GLOBAL FUNCTIONS ---
@@ -337,7 +316,7 @@
         }
 
         window.renderLeaderboard = function() {
-            if(!window.state) return;
+            if(!window.state || !window.state.players) return;
             const list = document.getElementById('leaderboard-list');
             list.innerHTML = '';
             const sortedPlayers = [...window.state.players].sort((a, b) => b.score - a.score);
@@ -367,7 +346,7 @@
         }
 
         window.populateGameSelect = function() {
-            if(!window.state) return;
+            if(!window.state || !window.state.games) return;
             const select = document.getElementById('game-select');
             const currentVal = select.value; 
             select.innerHTML = '';
@@ -387,7 +366,7 @@
         }
 
         window.getUnderdogs = function() {
-            if (window.state.players.length === 0) return [];
+            if (!window.state || window.state.players.length === 0) return [];
             if (window.state.players.every(p => p.score === 0)) return [];
             const sorted = [...window.state.players].sort((a, b) => b.score - a.score);
             const minScore = sorted[sorted.length - 1].score;
@@ -395,6 +374,7 @@
         }
 
         window.setupLogForm = function() {
+            if(!window.state) return;
             const pContainer = document.getElementById('players-checkboxes');
             const wContainer = document.getElementById('winner-radios');
             pContainer.innerHTML = ''; wContainer.innerHTML = '';
@@ -425,7 +405,7 @@
 
         window.updateLogFormUI = function() {
             const gameId = document.getElementById('game-select').value;
-            if(!gameId) return;
+            if(!gameId || !window.state) return;
             const game = window.state.games.find(g => g.id === gameId);
             const presentIds = Array.from(document.querySelectorAll('#players-checkboxes .check-item.selected')).map(el => el.dataset.id);
             const compSection = document.getElementById('competitive-section');
@@ -453,7 +433,7 @@
                         if (!player.hasUsedDouble) {
                             let bDiv = document.createElement('div');
                             bDiv.className = 'check-item bet-item';
-                            bDiv.innerHTML = `<div>${p.name}</div>`; // Simplified text
+                            bDiv.innerHTML = `<div>${p.name}</div>`; 
                             bDiv.innerText = `Apostar (${player.name})`;
                             bDiv.dataset.id = pid;
                             bDiv.onclick = function() { this.classList.toggle('selected'); };
@@ -480,7 +460,6 @@
             if (game.isCoop) {
                 coopResult = document.getElementById('coop-result').value;
                 winnerName = `CO-OP (${coopResult})`;
-                
                 presentIds.forEach(pid => {
                     const player = window.state.players.find(p => p.id === pid);
                     const isUnderdog = underdogs.includes(pid);
@@ -492,7 +471,6 @@
                     } else if (coopResult === 'SILVER') winPts = Math.ceil(tierPts.win / 2);
                     player.score += winPts + participationPts;
                 });
-
             } else {
                 const winnerEl = document.querySelector('#winner-radios .check-item.selected');
                 if (!winnerEl) return alert("Selecciona un ganador.");
@@ -505,10 +483,8 @@
                     const player = window.state.players.find(p => p.id === pid);
                     const isUnderdog = underdogs.includes(pid);
                     let participationPts = isUnderdog ? (tierPts.play * 2) : tierPts.play;
-                    
                     const isWinner = (pid === winnerId);
                     const hasBet = bettingIds.includes(pid);
-                    
                     if (hasBet) {
                         player.hasUsedDouble = true; 
                         if (isWinner) player.score += (tierPts.win * 2) + participationPts;
@@ -527,6 +503,7 @@
         }
 
         window.setupRouletteUI = function() {
+            if(!window.state) return;
             const container = document.getElementById('veto-buttons');
             container.innerHTML = '';
             window.state.players.forEach(p => {
@@ -543,6 +520,7 @@
         }
 
         window.spinRoulette = function() {
+            if(!window.state) return;
             const tier = document.getElementById('roulette-tier').value;
             const pool = window.state.games.filter(g => tier === 'ALL' || g.tier === tier);
             const display = document.getElementById('roulette-display');
@@ -595,6 +573,7 @@
         }
 
         window.renderConfigTable = function() {
+            if(!window.state) return;
             const tbody = document.getElementById('config-table-body');
             tbody.innerHTML = '';
             ['S', 'A', 'B'].forEach(tier => {
@@ -639,7 +618,6 @@
             if (!window.checkAdminAuth()) return;
             if(confirm("¿BORRAR TODO? Irreversible.")) { 
                 document.body.style.cursor = 'wait';
-                // BORRADO REAL: Elimina el doc de Firebase
                 await deleteDoc(docRef);
                 location.reload();
             }
@@ -664,7 +642,7 @@
             for(let i=1; i<=5; i++) inputs.innerHTML += `<input type="text" placeholder="Jugador ${i}" id="p-name-${i}" style="margin-bottom:5px">`;
         }
 
-        window.finishSetup = function() {
+        window.finishSetup = async function() {
             const pwd = document.getElementById('setup-password').value.trim();
             if (!pwd) return alert("Define contraseña.");
             const newPlayers = [];
@@ -673,11 +651,12 @@
             window.state = {
                 players: newPlayers,
                 history: [],
-                games: GAMES_DB,
+                games: JSON.parse(JSON.stringify(GAMES_DB)), // Copia fresca de juegos
                 config: { adminPassword: pwd, points: DEFAULT_CONFIG.points }
             };
-            window.saveStateToCloud();
-            // onSnapshot se encargará de ocultar el modal cuando detecte el cambio
+            
+            await window.saveStateToCloud();
+            // onSnapshot se encargará del resto
         }
 
     </script>
