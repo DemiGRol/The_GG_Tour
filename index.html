@@ -614,17 +614,26 @@
             alert(`✅ Juego "${name}" agregado.`);
         }
 
-        window.hardReset = function() {
+        // VERSIÓN CORREGIDA: Espera a que se guarde antes de recargar
+        window.hardReset = async function() {
             if (!window.checkAdminAuth()) return;
+            
             if(confirm("¿BORRAR TODO EL PROGRESO DEL VIAJE? Esto es irreversible.")) { 
-                // En Firestore es mejor vaciar la data que borrar el doc, para mantener estructura
+                // Reseteamos la variable local
                 window.state = {
                     players: [],
                     history: [],
                     games: GAMES_DB,
                     config: DEFAULT_CONFIG
                 };
-                window.saveStateToCloud();
+                
+                // AVISO VISUAL: Para que sepas que está trabajando
+                document.body.style.cursor = 'wait'; 
+                
+                // EL CAMBIO CLAVE: "await" obliga a esperar la respuesta de la nube
+                await window.saveStateToCloud();
+                
+                // Solo recarga cuando la nube confirma que guardó
                 location.reload();
             }
         }
@@ -669,4 +678,5 @@
 
     </script>
 </body>
+
 </html>
