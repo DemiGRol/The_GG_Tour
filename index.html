@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Board Game Tour V12 (Compact UI)</title>
+    <title>Board Game Tour V13 (Classic UI)</title>
     <style>
         :root {
             --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc; --secondary: #03dac6;
@@ -53,25 +53,18 @@
         .badge-shield { color: var(--text-muted); opacity: 0.3; } .badge-shield.active { color: var(--secondary); opacity: 1; }
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-        /* CHECKBOXES COMPACTOS (ESTILO ANTERIOR) */
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        /* ESTILO V9: CHIPS / PASTILLAS */
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
         
         .check-item {
             background: var(--card-bg); 
-            padding: 12px; 
-            border-radius: 8px; /* Bordes más rectos */
+            padding: 10px 15px; 
+            border-radius: 20px; /* Redondeado V9 */
             border: 1px solid #444; 
             cursor: pointer; 
             user-select: none; 
             text-align: center;
-            width: 48%; /* 2 por fila exactos */
-            flex-grow: 1;
-            font-size: 14px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            white-space: nowrap;
+            /* Sin ancho fijo, fluye con el texto */
         }
 
         .check-item.selected { background: var(--secondary); color: #000; border-color: var(--secondary); }
@@ -256,7 +249,7 @@
             if (docSnap.exists()) {
                 window.state = docSnap.data();
                 
-                // AUTO-REPARACIÓN DE JUEGOS
+                // AUTO-REPARACIÓN
                 if (!window.state.games || !Array.isArray(window.state.games) || window.state.games.length === 0) {
                     console.warn("Base de datos sin juegos. Reparando...");
                     window.state.games = JSON.parse(JSON.stringify(GAMES_DB)); 
@@ -395,7 +388,7 @@
                 let pDiv = document.createElement('div');
                 pDiv.className = 'check-item';
                 if(isUnderdog) pDiv.classList.add('is-underdog');
-                // HTML COMPACTO (V12)
+                // HTML COMPACTO ESTILO V9 (Sin nested divs raros)
                 pDiv.innerHTML = `${p.name} ${isUnderdog?'🔥':''}`;
                 pDiv.dataset.id = p.id;
                 pDiv.onclick = function() { this.classList.toggle('selected'); window.updateLogFormUI(); };
