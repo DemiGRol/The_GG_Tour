@@ -3,21 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Board Game Tour V13 (Classic UI)</title>
+    <title>Board Game Tour V13 (Classic Look + Cloud Core)</title>
     <style>
         :root {
-            --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc; --secondary: #03dac6;
-            --danger: #cf6679; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32;
-            --text: #ffffff; --text-muted: #b0b0b0; --underdog: #ff9800;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #bb86fc;
+            --secondary: #03dac6;
+            --danger: #cf6679;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+            --text: #ffffff;
+            --text-muted: #b0b0b0;
+            --underdog: #ff9800;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
         body { background-color: var(--bg-color); color: var(--text); padding-bottom: 80px; }
+
+        /* Utilities */
         .container { padding: 20px; max-width: 600px; margin: 0 auto; }
         .hidden { display: none !important; }
         h1, h2, h3 { margin-bottom: 15px; }
-        
-        /* Botones Generales */
-        .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: transform 0.1s; }
+        .btn {
+            display: block; width: 100%; padding: 15px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px;
+            transition: transform 0.1s;
+        }
         .btn:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary); color: #000; }
         .btn-secondary { background-color: var(--card-bg); color: var(--secondary); border: 2px solid var(--secondary); }
@@ -25,61 +39,89 @@
         
         .input-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); }
-        select, input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #333; color: var(--text); border-radius: 8px; font-size: 16px; margin-bottom: 5px; }
-        
+        select, input[type="text"], input[type="number"], input[type="password"] {
+            width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #333;
+            color: var(--text); border-radius: 8px; font-size: 16px; margin-bottom: 5px;
+        }
+
+        /* Tier Colors */
         option.tier-s { color: var(--gold); background: #332b00; }
         option.tier-a { color: var(--silver); background: #222; }
         option.tier-b { color: var(--bronze); background: #2a1a0a; }
 
+        /* Tables */
         .config-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .config-table th, .config-table td { border: 1px solid #333; padding: 10px; text-align: center; }
         .config-table th { background: #333; color: var(--secondary); }
         .config-input { width: 60px !important; padding: 5px !important; text-align: center; margin: 0 !important; }
 
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; z-index: 100; }
+        /* Navigation */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg);
+            display: flex; justify-content: space-around; padding: 15px 0;
+            border-top: 1px solid #333; z-index: 100;
+        }
         .nav-item { color: var(--text-muted); text-decoration: none; font-size: 12px; text-align: center; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         .nav-icon { display: block; font-size: 20px; margin-bottom: 4px; }
 
-        .leaderboard-item { background: var(--card-bg); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        /* Dashboard */
+        .leaderboard-item {
+            background: var(--card-bg); padding: 15px; border-radius: 10px;
+            margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+        }
         .rank { font-size: 24px; font-weight: bold; width: 30px; }
         .player-info { flex-grow: 1; margin-left: 10px; }
         .player-name { font-size: 18px; font-weight: bold; }
         .badges { margin-top: 5px; font-size: 14px; }
         .score { font-size: 24px; font-weight: bold; color: var(--secondary); }
+        
         .badge-crown { color: var(--gold); }
         .badge-fire { color: var(--underdog); animation: pulse 1.5s infinite; }
-        .badge-card { color: var(--text-muted); opacity: 0.3; } .badge-card.active { color: var(--primary); opacity: 1; }
-        .badge-shield { color: var(--text-muted); opacity: 0.3; } .badge-shield.active { color: var(--secondary); opacity: 1; }
+        .badge-card { color: var(--text-muted); opacity: 0.3; }
+        .badge-card.active { color: var(--primary); opacity: 1; }
+        .badge-shield { color: var(--text-muted); opacity: 0.3; }
+        .badge-shield.active { color: var(--secondary); opacity: 1; }
+
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-        /* ESTILO V9: CHIPS / PASTILLAS */
+        /* Checkboxes (ESTILO CLÁSICO V8/V9) */
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        
         .check-item {
-            background: var(--card-bg); 
-            padding: 10px 15px; 
-            border-radius: 20px; /* Redondeado V9 */
-            border: 1px solid #444; 
-            cursor: pointer; 
-            user-select: none; 
-            text-align: center;
-            /* Sin ancho fijo, fluye con el texto */
+            background: var(--card-bg); padding: 10px 15px; border-radius: 20px;
+            border: 1px solid #444; cursor: pointer; user-select: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-width: 80px; text-align: center;
         }
-
         .check-item.selected { background: var(--secondary); color: #000; border-color: var(--secondary); }
+        
+        /* Underdog Style */
         .check-item.is-underdog { border: 1px dashed var(--underdog); color: var(--underdog); }
         .check-item.is-underdog.selected { background: var(--underdog); color: #000; border-style: solid; }
+        .check-item span.subtext { font-size: 10px; opacity: 0.8; margin-top: 2px; }
 
+        /* Betting */
         .bet-item { background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger); color: var(--danger); }
         .bet-item.selected { background: var(--danger); color: white; border-color: var(--danger); }
         .double-nothing-container { background: rgba(207, 102, 121, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--danger); margin-top: 15px; }
         .coop-container { background: rgba(3, 218, 198, 0.1); padding: 15px; border-radius: 8px; border: 1px solid var(--secondary); margin-top: 15px; }
 
-        .roulette-wheel { width: 200px; height: 200px; border-radius: 50%; border: 5px solid var(--primary); margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; text-align: center; background: var(--card-bg); box-shadow: 0 0 20px rgba(187, 134, 252, 0.2); transition: all 0.1s; }
+        /* Roulette */
+        .roulette-wheel {
+            width: 200px; height: 200px; border-radius: 50%; border: 5px solid var(--primary);
+            margin: 30px auto; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: bold; text-align: center; background: var(--card-bg);
+            box-shadow: 0 0 20px rgba(187, 134, 252, 0.2); transition: all 0.1s;
+        }
         
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 200; }
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 200;
+        }
         .modal-content { background: var(--card-bg); padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
+
+        /* Loader para Firebase */
         .loader { border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -98,14 +140,17 @@
 
     <div id="view-log" class="container hidden">
         <h1>📝 Registrar Partida</h1>
+        
         <div class="input-group">
             <label>Juego</label>
             <select id="game-select" onchange="updateLogFormUI()"></select>
         </div>
+
         <div class="input-group">
             <label>Jugadores Presentes</label>
             <div id="players-checkboxes" class="checkbox-group"></div>
         </div>
+
         <div id="competitive-section">
             <div class="input-group">
                 <label>Ganador(es)</label>
@@ -113,10 +158,13 @@
             </div>
             <div id="betting-zone" class="hidden double-nothing-container">
                 <label style="color: var(--danger);">🃏 Zona de Apuestas (Doble o Nada)</label>
-                <p style="font-size: 12px; margin-bottom: 10px; color: #ffcccb;">Gana = Puntos x2 | Pierde = 0 Puntos.<br>La carta se quema siempre.</p>
+                <p style="font-size: 12px; margin-bottom: 10px; color: #ffcccb;">
+                    Gana = Puntos x2 | Pierde = 0 Puntos.<br>La carta se quema siempre.
+                </p>
                 <div id="betting-checkboxes" class="checkbox-group"></div>
             </div>
         </div>
+
         <div id="cooperative-section" class="hidden coop-container">
             <label style="color: var(--secondary);">🤝 Resultado Cooperativo</label>
             <p style="font-size: 12px; margin-bottom: 10px; color: #b0fff5;">Oro restaura habilidades.</p>
@@ -126,6 +174,7 @@
                 <option value="BRONZE">🥉 Derrota (Bronce)</option>
             </select>
         </div>
+
         <button class="btn btn-primary" onclick="submitMatch()" style="margin-top:20px">Guardar Partida</button>
     </div>
 
@@ -140,8 +189,10 @@
                 <option value="B">Tier B (Filler <30m)</option>
             </select>
         </div>
+        
         <div id="roulette-display" class="roulette-wheel">?</div>
         <button id="btn-spin" class="btn btn-primary" onclick="spinRoulette()">GIRAR</button>
+        
         <div id="veto-section" class="hidden" style="margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">
             <label style="color: var(--danger);">🛡️ Zona de Veto</label>
             <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
@@ -153,6 +204,7 @@
 
     <div id="view-admin" class="container hidden">
         <h1>⚙️ Admin</h1>
+        
         <div class="input-group">
             <label style="color: var(--secondary);">⚖️ Reglas</label>
             <table class="config-table">
@@ -161,9 +213,12 @@
             </table>
             <button class="btn btn-secondary" onclick="saveConfig()">💾 Guardar Reglas (Pass)</button>
         </div>
+
         <div class="input-group" style="border-top: 1px solid #333; padding-top: 20px;">
             <label style="color: var(--primary);">🎲 Gestión de Ludoteca</label>
+            
             <button id="btn-unlock-game" class="btn btn-secondary" onclick="unlockGameForm()">🔓 Agregar Nuevo Juego (Pass)</button>
+            
             <div id="add-game-form" class="hidden">
                 <input type="text" id="new-game-name" placeholder="Nombre del Juego">
                 <select id="new-game-tier">
@@ -178,10 +233,20 @@
                 <button class="btn btn-primary" onclick="addNewGame()">💾 Guardar Juego</button>
             </div>
         </div>
+
         <hr style="border-color: #333; margin: 20px 0;">
+
         <div class="input-group">
             <button class="btn btn-secondary" onclick="resetPlayers()">✏️ Renombrar Jugadores</button>
         </div>
+
+        <div class="input-group">
+            <button class="btn btn-primary" onclick="exportData()">⬇️ Exportar JSON</button>
+            <div style="margin-top: 10px;">
+                <input type="file" id="import-file" class="file-input" onchange="importData(this)">
+            </div>
+        </div>
+
         <div class="input-group" style="margin-top: 40px;">
             <button class="btn btn-danger" onclick="hardReset()">⚠️ BORRAR TODO (CUIDADO)</button>
         </div>
@@ -211,6 +276,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
+        // TUS CREDENCIALES
         const firebaseConfig = {
             apiKey: "AIzaSyB93kZK68MRZmMCP5RvGzHZKegmWbruM-E",
             authDomain: "the-grand-game-tour.firebaseapp.com",
@@ -388,8 +454,8 @@
                 let pDiv = document.createElement('div');
                 pDiv.className = 'check-item';
                 if(isUnderdog) pDiv.classList.add('is-underdog');
-                // HTML COMPACTO ESTILO V9 (Sin nested divs raros)
-                pDiv.innerHTML = `${p.name} ${isUnderdog?'🔥':''}`;
+                // ESTILO V8/V9 PRESERVADO (Pastilla con subtitulo si es underdog)
+                pDiv.innerHTML = `<div>${p.name} ${isUnderdog?'🔥':''}</div>${isUnderdog?'<span class="subtext">Bonus x2</span>':''}`;
                 pDiv.dataset.id = p.id;
                 pDiv.onclick = function() { this.classList.toggle('selected'); window.updateLogFormUI(); };
                 pContainer.appendChild(pDiv);
@@ -397,7 +463,7 @@
                 let wDiv = document.createElement('div');
                 wDiv.className = 'check-item hidden';
                 wDiv.id = 'winner-opt-'+p.id;
-                wDiv.innerHTML = `${p.name} 🏆`;
+                wDiv.innerHTML = `<div>${p.name} 🏆</div>`;
                 wDiv.onclick = function() {
                     document.querySelectorAll('#winner-radios .check-item').forEach(el => el.classList.remove('selected'));
                     this.classList.add('selected');
@@ -437,6 +503,7 @@
                         if (!player.hasUsedDouble) {
                             let bDiv = document.createElement('div');
                             bDiv.className = 'check-item bet-item';
+                            bDiv.innerHTML = `<div>${p.name}</div>`; 
                             bDiv.innerText = `Apostar (${player.name})`;
                             bDiv.dataset.id = pid;
                             bDiv.onclick = function() { this.classList.toggle('selected'); };
