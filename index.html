@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Board Game Tour V9 (Online)</title>
+    <style>
+        :root {
+            --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc; --secondary: #03dac6;
+            --danger: #cf6679; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32;
+            --text: #ffffff; --text-muted: #b0b0b0; --underdog: #ff9800;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text); padding-bottom: 80px; }
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .hidden { display: none !important; }
+        h1, h2, h3 { margin-bottom: 15px; }
+        .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--primary); color: #000; }
+        .btn-secondary { background-color: var(--card-bg); color: var(--secondary); border: 2px solid var(--secondary); }
+        .btn-danger { background-color: var(--danger); color: #fff; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); }
+        select, input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #333; color: var(--text); border-radius: 8px; font-size: 16px; margin-bottom: 5px; }
+        
+        option.tier-s { color: var(--gold); background: #332b00; }
+        option.tier-a { color: var(--silver); background: #222; }
+        option.tier-b { color: var(--bronze); background: #2a1a0a; }
+
+        .config-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .config-table th, .config-table td { border: 1px solid #333; padding: 10px; text-align: center; }
+        .config-table th { background: #333; color: var(--secondary); }
+        .config-input { width: 60px !important; padding: 5px !important; text-align: center; margin: 0 !important; }
+
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; z-index: 100; }
+        .nav-item { color: var(--text-muted); text-decoration: none; font-size: 12px; text-align: center; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-icon { display: block; font-size: 20px; margin-bottom: 4px; }
+
+        .leaderboard-item { background: var(--card-bg); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .rank { font-size: 24px; font-weight: bold; width: 30px; }
+        .player-info { flex-grow: 1; margin-left: 10px; }
+        .player-name { font-size: 18px; font-weight: bold; }
+        .badges { margin-top: 5px; font-size: 14px; }
+        .score { font-size: 24px; font-weight: bold; color: var(--secondary); }
+        .badge-crown { color: var(--gold); }
+        .badge-fire { color: var(--underdog); animation: pulse 1.5s infinite; }
+        .badge-card { color: var(--text-muted); opacity: 0.3; } .badge-card.active { color: var(--primary); opacity: 1; }
+        .badge-shield { color: var(--text-muted); opacity: 0.3; } .badge-shield.active { color: var(--secondary); opacity: 1; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .check-item { background: var(--card-bg); padding: 10px 15px; border-radius: 20px; border: 1px solid #444; cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; text-align: center; }
+        .check-item.selected { background: var(--secondary); color: #000; border-color: var(--secondary); }
+        .check-item.is-underdog { border: 1px dashed var(--underdog); color: var(--underdog); }
+        .check-item.is-underdog.selected { background: var(--underdog); color: #000; border-style: solid; }
+        .check-item span.subtext { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+
+        .bet-item { background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .bet-item.selected { background: var(--danger); color: white; border-color: var(--danger); }
+        .double-nothing-container { background: rgba(207, 102, 121, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--danger); margin-top: 15px; }
+        .coop-container { background: rgba(3, 218, 198, 0.1); padding: 15px; border-radius: 8px; border: 1px solid var(--secondary); margin-top: 15px; }
+
+        .roulette-wheel { width: 200px; height: 200px; border-radius: 50%; border: 5px solid var(--primary); margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; text-align: center; background: var(--card-bg); box-shadow: 0 0 20px rgba(187, 134, 252, 0.2); transition: all 0.1s; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 200; }
+        .modal-content { background: var(--card-bg); padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
+        
+        /* Spinner Loader */
+        .loader { border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen" class="container" style="text-align: center; margin-top: 50px;">
+        <div class="loader"></div>
+        <p>Sincronizando con la Nube...</p>
+    </div>
+
+    <div id="view-dashboard" class="container hidden">
+        <h1>🏆 Leaderboard</h1>
+        <div id="leaderboard-list"></div>
+    </div>
+
+    <div id="view-log" class="container hidden">
+        <h1>📝 Registrar Partida</h1>
+        <div class="input-group">
+            <label>Juego</label>
+            <select id="game-select" onchange="updateLogFormUI()"></select>
+        </div>
+        <div class="input-group">
+            <label>Jugadores Presentes</label>
+            <div id="players-checkboxes" class="checkbox-group"></div>
+        </div>
+        <div id="competitive-section">
+            <div class="input-group">
+                <label>Ganador(es)</label>
+                <div id="winner-radios" class="checkbox-group"></div>
+            </div>
+            <div id="betting-zone" class="hidden double-nothing-container">
+                <label style="color: var(--danger);">🃏 Zona de Apuestas (Doble o Nada)</label>
+                <p style="font-size: 12px; margin-bottom: 10px; color: #ffcccb;">Gana = Puntos x2 | Pierde = 0 Puntos.<br>La carta se quema siempre.</p>
+                <div id="betting-checkboxes" class="checkbox-group"></div>
+            </div>
+        </div>
+        <div id="cooperative-section" class="hidden coop-container">
+            <label style="color: var(--secondary);">🤝 Resultado Cooperativo</label>
+            <p style="font-size: 12px; margin-bottom: 10px; color: #b0fff5;">Oro restaura habilidades.</p>
+            <select id="coop-result">
+                <option value="GOLD">🥇 Victoria Perfecta (Oro)</option>
+                <option value="SILVER">🥈 Victoria Ajustada (Plata)</option>
+                <option value="BRONZE">🥉 Derrota (Bronce)</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="submitMatch()" style="margin-top:20px">Guardar Partida</button>
+    </div>
+
+    <div id="view-roulette" class="container hidden">
+        <h1>🎰 Ruleta</h1>
+        <div class="input-group">
+            <label>Filtro por TIER</label>
+            <select id="roulette-tier">
+                <option value="ALL">Cualquiera</option>
+                <option value="S">Tier S (Épico >120m)</option>
+                <option value="A">Tier A (Estándar 45-90m)</option>
+                <option value="B">Tier B (Filler <30m)</option>
+            </select>
+        </div>
+        <div id="roulette-display" class="roulette-wheel">?</div>
+        <button id="btn-spin" class="btn btn-primary" onclick="spinRoulette()">GIRAR</button>
+        <div id="veto-section" class="hidden" style="margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">
+            <label style="color: var(--danger);">🛡️ Zona de Veto</label>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+                <b>¿Qué es esto?</b> Si el juego que salió no te gusta, puedes usar tu <b>única</b> ficha de Veto del viaje para cancelarlo inmediatamente y obligar a girar de nuevo. <br>⚠️ <i>Se gasta al usarla.</i>
+            </p>
+            <div id="veto-buttons" class="checkbox-group"></div>
+        </div>
+    </div>
+
+    <div id="view-admin" class="container hidden">
+        <h1>⚙️ Admin</h1>
+        <div class="input-group">
+            <label style="color: var(--secondary);">⚖️ Reglas</label>
+            <table class="config-table">
+                <thead><tr><th>TIER</th><th>Win</th><th>Play</th></tr></thead>
+                <tbody id="config-table-body"></tbody>
+            </table>
+            <button class="btn btn-secondary" onclick="saveConfig()">💾 Guardar Reglas (Pass)</button>
+        </div>
+        <div class="input-group" style="border-top: 1px solid #333; padding-top: 20px;">
+            <label style="color: var(--primary);">🎲 Gestión de Ludoteca</label>
+            <button id="btn-unlock-game" class="btn btn-secondary" onclick="unlockGameForm()">🔓 Agregar Nuevo Juego (Pass)</button>
+            <div id="add-game-form" class="hidden">
+                <input type="text" id="new-game-name" placeholder="Nombre del Juego">
+                <select id="new-game-tier">
+                    <option value="S" class="tier-s">Tier S (Épico)</option>
+                    <option value="A" class="tier-a">Tier A (Estándar)</option>
+                    <option value="B" class="tier-b">Tier B (Filler)</option>
+                </select>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="new-game-coop" style="width: auto; margin-right: 10px;">
+                    <span>¿Es Cooperativo? 🤝</span>
+                </div>
+                <button class="btn btn-primary" onclick="addNewGame()">💾 Guardar Juego</button>
+            </div>
+        </div>
+        <hr style="border-color: #333; margin: 20px 0;">
+        <div class="input-group">
+            <button class="btn btn-secondary" onclick="resetPlayers()">✏️ Renombrar Jugadores</button>
+        </div>
+        <div class="input-group" style="margin-top: 40px;">
+            <button class="btn btn-danger" onclick="hardReset()">⚠️ BORRAR TODO (CUIDADO)</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar hidden" id="nav-bar">
+        <a href="#" class="nav-item active" onclick="switchView('dashboard', this)"><span class="nav-icon">🏆</span>Tabla</a>
+        <a href="#" class="nav-item" onclick="switchView('log', this)"><span class="nav-icon">📝</span>Registrar</a>
+        <a href="#" class="nav-item" onclick="switchView('roulette', this)"><span class="nav-icon">🎰</span>Ruleta</a>
+        <a href="#" class="nav-item" onclick="switchView('admin', this)"><span class="nav-icon">⚙️</span>Admin</a>
+    </nav>
+
+    <div id="setup-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Configuración Inicial</h2>
+            <p style="color: var(--gold); font-size: 12px;">☁️ Conectado a Firebase</p>
+            <p>1. Nombres de viajeros:</p>
+            <div id="setup-inputs"></div>
+            <hr style="margin: 15px 0; border-color:#333">
+            <p>2. Contraseña de Admin:</p>
+            <input type="password" id="setup-password" placeholder="Ej: secreto123">
+            <button class="btn btn-primary" style="margin-top: 15px;" onclick="finishSetup()">Crear Base de Datos</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB93kZK68MRZmMCP5RvGzHZKegmWbruM-E",
+            authDomain: "the-grand-game-tour.firebaseapp.com",
+            projectId: "the-grand-game-tour",
+            storageBucket: "the-grand-game-tour.firebasestorage.app",
+            messagingSenderId: "421017957490",
+            appId: "1:421017957490:web:a4acedda702002cf373eeb",
+            measurementId: "G-18FRK3Q7R1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const DOC_ID = "main_tour_data"; // ID único del documento en Firestore
+
+        // VARIABLES GLOBALES (accesibles desde window para las funciones del DOM)
+        window.state = null;
+        
+        // Defaults
+        const DEFAULT_CONFIG = { adminPassword: null, points: { S: { win: 25, play: 10 }, A: { win: 15, play: 5 }, B: { win: 7, play: 2 } } };
+        const GAMES_DB = [
+            { id: 'catan', name: 'Catan', tier: 'A', isCoop: false },
+            { id: 'scythe', name: 'Scythe', tier: 'S', isCoop: false },
+            { id: 'carcassonne', name: 'Carcassonne', tier: 'A', isCoop: false },
+            { id: 'exploding', name: 'Exploding Kittens', tier: 'B', isCoop: false },
+            { id: 'pistas', name: 'Pistas Cruzadas', tier: 'B', isCoop: true },
+            { id: 'themind', name: 'The Mind', tier: 'B', isCoop: true },
+            { id: 'pandemia', name: 'Pandemic', tier: 'A', isCoop: true },
+            { id: 'hanabi', name: 'Hanabi', tier: 'B', isCoop: true },
+            { id: 'spirit', name: 'Spirit Island', tier: 'S', isCoop: true },
+            { id: 'codenames', name: 'Codenames', tier: 'B', isCoop: true }
+        ];
+
+        // --- FIREBASE SYNC ---
+        const docRef = doc(db, "boardgames", DOC_ID);
+
+        // Escuchar cambios en tiempo real
+        onSnapshot(docRef, (docSnap) => {
+            const loading = document.getElementById('loading-screen');
+            if (docSnap.exists()) {
+                window.state = docSnap.data();
+                
+                // Migración de Juegos en tiempo real
+                if(window.state.games.length < GAMES_DB.length) {
+                   let changed = false;
+                   GAMES_DB.forEach(g => { 
+                       if(!window.state.games.find(sg => sg.id === g.id)) {
+                           window.state.games.push(g);
+                           changed = true;
+                       }
+                   });
+                   if(changed) saveStateToCloud();
+                }
+
+                // UI Update
+                loading.classList.add('hidden');
+                document.getElementById('nav-bar').classList.remove('hidden');
+                // Si estábamos en loading, ir al dashboard, sino mantener vista actual
+                if(!document.getElementById('view-dashboard').classList.contains('hidden') || 
+                   !document.getElementById('view-log').classList.contains('hidden') ||
+                   !document.getElementById('view-roulette').classList.contains('hidden') ||
+                   !document.getElementById('view-admin').classList.contains('hidden')) {
+                       // Refrescar UI activa
+                       window.renderLeaderboard(); 
+                       window.populateGameSelect();
+                       window.renderConfigTable();
+                   } else {
+                       window.switchView('dashboard');
+                   }
+            } else {
+                // No existe doc, mostrar Setup
+                loading.classList.add('hidden');
+                window.showSetupModal();
+            }
+        });
+
+        // Guardar cambios en la nube
+        window.saveStateToCloud = async function() {
+            try {
+                await setDoc(docRef, window.state);
+                console.log("Estado guardado en la nube");
+                window.renderLeaderboard(); // Optimistic update
+            } catch (e) {
+                alert("Error guardando en la nube: " + e.message);
+            }
+        }
+
+        // --- GLOBAL FUNCTIONS EXPORTED TO WINDOW ---
+        
+        window.switchView = function(viewName, navElement) {
+            document.querySelectorAll('.container').forEach(el => {
+                if(el.id !== 'loading-screen') el.classList.add('hidden');
+            });
+            document.getElementById('view-' + viewName).classList.remove('hidden');
+            
+            if(navElement) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                navElement.classList.add('active');
+            } else {
+                // Marcar activo el primero por defecto
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.querySelector(`[onclick*="'${viewName}'"]`)?.classList.add('active');
+            }
+
+            if(viewName === 'log') window.setupLogForm();
+            if(viewName === 'roulette') window.setupRouletteUI();
+            if(viewName === 'admin') {
+                window.renderConfigTable();
+                document.getElementById('add-game-form').classList.add('hidden');
+                document.getElementById('btn-unlock-game').classList.remove('hidden');
+            }
+        }
+
+        window.renderLeaderboard = function() {
+            if(!window.state) return;
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            const sortedPlayers = [...window.state.players].sort((a, b) => b.score - a.score);
+            const lastPlaceScore = sortedPlayers[sortedPlayers.length - 1]?.score || 0;
+
+            sortedPlayers.forEach((p, index) => {
+                const isFirst = index === 0;
+                const isLast = p.score === lastPlaceScore && window.state.history.length > 0;
+                let item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <div class="rank">${index + 1}</div>
+                    <div class="player-info">
+                        <div class="player-name">
+                            ${p.name} 
+                            ${isFirst ? '<span class="badge-crown">👑</span>' : ''}
+                            ${isLast ? '<span class="badge-fire">🔥</span>' : ''}
+                        </div>
+                        <div class="badges">
+                            <span class="badge-card ${!p.hasUsedDouble ? 'active' : ''}">🃏</span>
+                            <span class="badge-shield ${!p.hasUsedVeto ? 'active' : ''}">🛡️</span>
+                        </div>
+                    </div>
+                    <div class="score">${p.score}</div>`;
+                list.appendChild(item);
+            });
+        }
+
+        window.populateGameSelect = function() {
+            if(!window.state) return;
+            const select = document.getElementById('game-select');
+            const currentVal = select.value; // Preservar selección si se redibuja
+            select.innerHTML = '';
+            const tierOrder = { 'S': 1, 'A': 2, 'B': 3 };
+            const sortedGames = [...window.state.games].sort((a,b) => {
+                if (tierOrder[a.tier] !== tierOrder[b.tier]) return tierOrder[a.tier] - tierOrder[b.tier];
+                return a.name.localeCompare(b.name);
+            });
+            sortedGames.forEach(g => {
+                let opt = document.createElement('option');
+                opt.value = g.id;
+                opt.text = `[Tier ${g.tier}] ${g.name}${g.isCoop ? ' [🤝]' : ''}`;
+                opt.className = g.tier === 'S' ? 'tier-s' : (g.tier === 'A' ? 'tier-a' : 'tier-b');
+                select.appendChild(opt);
+            });
+            if(currentVal) select.value = currentVal;
+        }
+
+        window.getUnderdogs = function() {
+            if (window.state.players.length === 0) return [];
+            if (window.state.players.every(p => p.score === 0)) return [];
+            const sorted = [...window.state.players].sort((a, b) => b.score - a.score);
+            const minScore = sorted[sorted.length - 1].score;
+            return window.state.players.filter(p => p.score === minScore).map(p => p.id);
+        }
+
+        window.setupLogForm = function() {
+            const pContainer = document.getElementById('players-checkboxes');
+            const wContainer = document.getElementById('winner-radios');
+            pContainer.innerHTML = ''; wContainer.innerHTML = '';
+            const underdogs = window.getUnderdogs();
+
+            window.state.players.forEach(p => {
+                const isUnderdog = underdogs.includes(p.id);
+                let pDiv = document.createElement('div');
+                pDiv.className = 'check-item';
+                if(isUnderdog) pDiv.classList.add('is-underdog');
+                pDiv.innerHTML = `<div>${p.name} ${isUnderdog?'🔥':''}</div>${isUnderdog?'<span class="subtext">Bonus x2</span>':''}`;
+                pDiv.dataset.id = p.id;
+                pDiv.onclick = function() { this.classList.toggle('selected'); window.updateLogFormUI(); };
+                pContainer.appendChild(pDiv);
+
+                let wDiv = document.createElement('div');
+                wDiv.className = 'check-item hidden';
+                wDiv.id = 'winner-opt-'+p.id;
+                wDiv.innerText = p.name + ' 🏆';
+                wDiv.onclick = function() {
+                    document.querySelectorAll('#winner-radios .check-item').forEach(el => el.classList.remove('selected'));
+                    this.classList.add('selected');
+                };
+                wContainer.appendChild(wDiv);
+            });
+            window.updateLogFormUI();
+        }
+
+        window.updateLogFormUI = function() {
+            const gameId = document.getElementById('game-select').value;
+            if(!gameId) return;
+            const game = window.state.games.find(g => g.id === gameId);
+            const presentIds = Array.from(document.querySelectorAll('#players-checkboxes .check-item.selected')).map(el => el.dataset.id);
+            const compSection = document.getElementById('competitive-section');
+            const coopSection = document.getElementById('cooperative-section');
+            const bettingZone = document.getElementById('betting-zone');
+            const bettingCheckboxes = document.getElementById('betting-checkboxes');
+
+            if (game.isCoop) {
+                compSection.classList.add('hidden');
+                coopSection.classList.remove('hidden');
+            } else {
+                compSection.classList.remove('hidden');
+                coopSection.classList.add('hidden');
+                document.querySelectorAll('#winner-radios .check-item').forEach(el => {
+                    const pid = el.id.replace('winner-opt-', '');
+                    if (presentIds.includes(pid)) el.classList.remove('hidden');
+                    else { el.classList.add('hidden'); el.classList.remove('selected'); }
+                });
+                bettingZone.classList.add('hidden');
+                bettingCheckboxes.innerHTML = '';
+                if (game.tier === 'S' || game.tier === 'A') {
+                    bettingZone.classList.remove('hidden');
+                    presentIds.forEach(pid => {
+                        const player = window.state.players.find(p => p.id === pid);
+                        if (!player.hasUsedDouble) {
+                            let bDiv = document.createElement('div');
+                            bDiv.className = 'check-item bet-item';
+                            bDiv.innerText = `Apostar (${player.name})`;
+                            bDiv.dataset.id = pid;
+                            bDiv.onclick = function() { this.classList.toggle('selected'); };
+                            bettingCheckboxes.appendChild(bDiv);
+                        }
+                    });
+                }
+            }
+        }
+
+        window.submitMatch = function() {
+            const gameId = document.getElementById('game-select').value;
+            if (!gameId) return alert("Selecciona un juego.");
+            const game = window.state.games.find(g => g.id === gameId);
+            const presentIds = Array.from(document.querySelectorAll('#players-checkboxes .check-item.selected')).map(el => el.dataset.id);
+            if (presentIds.length < 2) return alert("Selecciona al menos 2 jugadores.");
+
+            // LOGIC CALCULATION WRAPPER
+            const tierPts = window.state.config.points[game.tier]; 
+            const underdogs = window.getUnderdogs(); 
+            let winnerName = "";
+            let bettingIds = [];
+            let coopResult = "";
+
+            if (game.isCoop) {
+                coopResult = document.getElementById('coop-result').value;
+                winnerName = `CO-OP (${coopResult})`;
+                
+                presentIds.forEach(pid => {
+                    const player = window.state.players.find(p => p.id === pid);
+                    const isUnderdog = underdogs.includes(pid);
+                    let participationPts = isUnderdog ? (tierPts.play * 2) : tierPts.play;
+                    let winPts = 0;
+                    if (coopResult === 'GOLD') {
+                        winPts = tierPts.win;
+                        player.hasUsedDouble = false; player.hasUsedVeto = false;
+                    } else if (coopResult === 'SILVER') winPts = Math.ceil(tierPts.win / 2);
+                    player.score += winPts + participationPts;
+                });
+
+            } else {
+                const winnerEl = document.querySelector('#winner-radios .check-item.selected');
+                if (!winnerEl) return alert("Selecciona un ganador.");
+                const winnerId = winnerEl.id.replace('winner-opt-', '');
+                winnerName = window.state.players.find(p => p.id === winnerId).name;
+                bettingIds = Array.from(document.querySelectorAll('#betting-checkboxes .bet-item.selected')).map(el => el.dataset.id);
+                if (bettingIds.length > 0 && !confirm(`Hay ${bettingIds.length} apuestas activas. ¿Confirmar?`)) return;
+
+                presentIds.forEach(pid => {
+                    const player = window.state.players.find(p => p.id === pid);
+                    const isUnderdog = underdogs.includes(pid);
+                    let participationPts = isUnderdog ? (tierPts.play * 2) : tierPts.play;
+                    
+                    const isWinner = (pid === winnerId);
+                    const hasBet = bettingIds.includes(pid);
+                    
+                    if (hasBet) {
+                        player.hasUsedDouble = true; 
+                        if (isWinner) player.score += (tierPts.win * 2) + participationPts;
+                        else player.score += 0;
+                    } else {
+                        if (isWinner) player.score += tierPts.win + participationPts;
+                        else player.score += participationPts;
+                    }
+                });
+            }
+
+            window.state.history.push({ date: new Date().toISOString(), game: game.name, winner: winnerName });
+            window.saveStateToCloud();
+            alert("✅ Partida registrada y sincronizada.");
+            window.switchView('dashboard');
+        }
+
+        // --- ROULETTE LOGIC ---
+        window.setupRouletteUI = function() {
+            const container = document.getElementById('veto-buttons');
+            container.innerHTML = '';
+            window.state.players.forEach(p => {
+                if (!p.hasUsedVeto) {
+                    let btn = document.createElement('div');
+                    btn.className = 'check-item';
+                    btn.style.borderColor = 'var(--danger)';
+                    btn.style.color = 'var(--danger)';
+                    btn.innerText = `🛡️ Vetar (${p.name})`;
+                    btn.onclick = () => window.useVeto(p.id);
+                    container.appendChild(btn);
+                }
+            });
+        }
+
+        window.spinRoulette = function() {
+            const tier = document.getElementById('roulette-tier').value;
+            const pool = window.state.games.filter(g => tier === 'ALL' || g.tier === tier);
+            const display = document.getElementById('roulette-display');
+            const spinBtn = document.getElementById('btn-spin');
+            const vetoSec = document.getElementById('veto-section');
+
+            if (pool.length === 0) return alert("No hay juegos en este Tier.");
+            vetoSec.classList.add('hidden');
+            spinBtn.disabled = true;
+            
+            let spins = 0;
+            let currentDelay = 50; 
+            const maxSpins = 30;   
+
+            function spinStep() {
+                const randomGame = pool[Math.floor(Math.random() * pool.length)];
+                display.innerText = randomGame.name;
+                let color = randomGame.isCoop ? 'var(--secondary)' : (randomGame.tier === 'S' ? 'var(--gold)' : (randomGame.tier === 'A' ? 'var(--silver)' : 'var(--bronze'));
+                display.style.borderColor = color;
+                display.style.color = 'var(--text)';
+                spins++;
+
+                if (spins < maxSpins) {
+                    currentDelay += 10;
+                    display.style.transform = `scale(${1 + (Math.random() * 0.05)})`;
+                    setTimeout(spinStep, currentDelay);
+                } else {
+                    display.style.transform = 'scale(1)';
+                    spinBtn.disabled = false;
+                    vetoSec.classList.remove('hidden');
+                }
+            }
+            spinStep();
+        }
+
+        window.useVeto = function(playerId) {
+            if(!confirm("¿Quemar Veto? Esta acción es irreversible.")) return;
+            const player = window.state.players.find(p => p.id === playerId);
+            player.hasUsedVeto = true;
+            window.saveStateToCloud();
+            alert(`${player.name} usó el VETO.`);
+            window.setupRouletteUI();
+        }
+
+        // --- ADMIN ---
+        window.checkAdminAuth = function() {
+            if (!window.state.config.adminPassword) { alert("Sin contraseña definida."); return false; }
+            const input = prompt("🔒 Ingresa contraseña:");
+            if (input === window.state.config.adminPassword) return true;
+            alert("❌ Incorrecto."); return false;
+        }
+
+        window.renderConfigTable = function() {
+            const tbody = document.getElementById('config-table-body');
+            tbody.innerHTML = '';
+            ['S', 'A', 'B'].forEach(tier => {
+                const data = window.state.config.points[tier];
+                tbody.innerHTML += `<tr><td><b>${tier}</b></td><td><input type="number" class="config-input" id="cfg-${tier}-win" value="${data.win}"></td><td><input type="number" class="config-input" id="cfg-${tier}-play" value="${data.play}"></td></tr>`;
+            });
+        }
+
+        window.saveConfig = function() {
+            if (window.checkAdminAuth()) {
+                ['S', 'A', 'B'].forEach(tier => {
+                    window.state.config.points[tier].win = parseInt(document.getElementById(`cfg-${tier}-win`).value);
+                    window.state.config.points[tier].play = parseInt(document.getElementById(`cfg-${tier}-play`).value);
+                });
+                window.saveStateToCloud(); alert("Reglas guardadas.");
+            } else window.renderConfigTable();
+        }
+
+        window.unlockGameForm = function() {
+            if(window.checkAdminAuth()) {
+                document.getElementById('btn-unlock-game').classList.add('hidden');
+                document.getElementById('add-game-form').classList.remove('hidden');
+            }
+        }
+
+        window.addNewGame = function() {
+            const name = document.getElementById('new-game-name').value.trim();
+            const tier = document.getElementById('new-game-tier').value;
+            const isCoop = document.getElementById('new-game-coop').checked;
+            if (!name) return alert("Nombre vacío.");
+
+            const newGame = { id: 'custom-' + Date.now(), name: name, tier: tier, isCoop: isCoop };
+            window.state.games.push(newGame);
+            window.saveStateToCloud();
+            
+            document.getElementById('new-game-name').value = '';
+            document.getElementById('new-game-coop').checked = false;
+            document.getElementById('add-game-form').classList.add('hidden');
+            document.getElementById('btn-unlock-game').classList.remove('hidden');
+            alert(`✅ Juego "${name}" agregado.`);
+        }
+
+        window.hardReset = function() {
+            if (!window.checkAdminAuth()) return;
+            if(confirm("¿BORRAR TODO EL PROGRESO DEL VIAJE? Esto es irreversible.")) { 
+                // En Firestore es mejor vaciar la data que borrar el doc, para mantener estructura
+                window.state = {
+                    players: [],
+                    history: [],
+                    games: GAMES_DB,
+                    config: DEFAULT_CONFIG
+                };
+                window.saveStateToCloud();
+                location.reload();
+            }
+        }
+
+        window.resetPlayers = function() { 
+            if (!window.checkAdminAuth()) return;
+            window.showSetupModal(); 
+            // Pre-fill names
+            setTimeout(() => {
+                 window.state.players.forEach((p, i) => {
+                     const el = document.getElementById(`p-name-${i+1}`);
+                     if(el) el.value = p.name;
+                 });
+                 // Keep password
+                 document.getElementById('setup-password').value = window.state.config.adminPassword;
+            }, 500);
+        }
+
+        // --- SETUP ---
+        window.showSetupModal = function() {
+            document.getElementById('setup-modal').classList.remove('hidden');
+            const inputs = document.getElementById('setup-inputs');
+            inputs.innerHTML = '';
+            for(let i=1; i<=5; i++) inputs.innerHTML += `<input type="text" placeholder="Jugador ${i}" id="p-name-${i}" style="margin-bottom:5px">`;
+        }
+
+        window.finishSetup = function() {
+            const pwd = document.getElementById('setup-password').value.trim();
+            if (!pwd) return alert("Define contraseña.");
+            const newPlayers = [];
+            for(let i=1; i<=5; i++) newPlayers.push({ id: 'p'+i, name: document.getElementById(`p-name-${i}`).value.trim() || `P${i}`, score: 0, hasUsedDouble: false, hasUsedVeto: false });
+            
+            window.state = {
+                players: newPlayers,
+                history: [],
+                games: GAMES_DB,
+                config: { adminPassword: pwd, points: DEFAULT_CONFIG.points }
+            };
+            window.saveStateToCloud();
+            document.getElementById('setup-modal').classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
