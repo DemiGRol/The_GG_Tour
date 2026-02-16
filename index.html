@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Board Game Tour V11 (Self-Repair)</title>
+    <title>Board Game Tour V12 (Compact UI)</title>
     <style>
         :root {
             --bg-color: #121212; --card-bg: #1e1e1e; --primary: #bb86fc; --secondary: #03dac6;
@@ -16,7 +16,7 @@
         .hidden { display: none !important; }
         h1, h2, h3 { margin-bottom: 15px; }
         
-        /* Botones */
+        /* Botones Generales */
         .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary); color: #000; }
@@ -53,18 +53,30 @@
         .badge-shield { color: var(--text-muted); opacity: 0.3; } .badge-shield.active { color: var(--secondary); opacity: 1; }
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
-        /* CHECKBOXES MEJORADOS */
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        /* CHECKBOXES COMPACTOS (ESTILO ANTERIOR) */
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        
         .check-item {
-            background: var(--card-bg); padding: 12px 5px; border-radius: 12px; border: 1px solid #444; 
-            cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            width: 30%; flex-grow: 1; text-align: center; min-height: 60px;
+            background: var(--card-bg); 
+            padding: 12px; 
+            border-radius: 8px; /* Bordes más rectos */
+            border: 1px solid #444; 
+            cursor: pointer; 
+            user-select: none; 
+            text-align: center;
+            width: 48%; /* 2 por fila exactos */
+            flex-grow: 1;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
-        .check-item div { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 5px; }
+
         .check-item.selected { background: var(--secondary); color: #000; border-color: var(--secondary); }
         .check-item.is-underdog { border: 1px dashed var(--underdog); color: var(--underdog); }
         .check-item.is-underdog.selected { background: var(--underdog); color: #000; border-style: solid; }
-        .check-item span.subtext { font-size: 10px; opacity: 0.8; margin-top: 2px; }
 
         .bet-item { background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger); color: var(--danger); }
         .bet-item.selected { background: var(--danger); color: white; border-color: var(--danger); }
@@ -244,15 +256,14 @@
             if (docSnap.exists()) {
                 window.state = docSnap.data();
                 
-                // AUTO-REPARACIÓN: Si existen los datos pero no los juegos, inyectarlos.
+                // AUTO-REPARACIÓN DE JUEGOS
                 if (!window.state.games || !Array.isArray(window.state.games) || window.state.games.length === 0) {
-                    console.warn("Detectada base de datos corrupta (sin juegos). Reparando...");
-                    window.state.games = JSON.parse(JSON.stringify(GAMES_DB)); // Copia fresca
-                    window.saveStateToCloud(); // Guardar reparación
-                    return; // Esperar al siguiente snapshot
+                    console.warn("Base de datos sin juegos. Reparando...");
+                    window.state.games = JSON.parse(JSON.stringify(GAMES_DB)); 
+                    window.saveStateToCloud();
+                    return; 
                 }
 
-                // Migración de Juegos Nuevos (si agregas más a GAMES_DB en el futuro)
                 if(window.state.games.length < GAMES_DB.length) {
                    let changed = false;
                    GAMES_DB.forEach(g => { 
@@ -268,7 +279,6 @@
                 document.getElementById('nav-bar').classList.remove('hidden');
                 document.getElementById('setup-modal').classList.add('hidden');
 
-                // Si no hay vista activa, ir al dashboard
                 if(document.getElementById('view-dashboard').classList.contains('hidden') && 
                    document.getElementById('view-log').classList.contains('hidden') &&
                    document.getElementById('view-roulette').classList.contains('hidden') &&
@@ -385,7 +395,8 @@
                 let pDiv = document.createElement('div');
                 pDiv.className = 'check-item';
                 if(isUnderdog) pDiv.classList.add('is-underdog');
-                pDiv.innerHTML = `<div>${p.name} ${isUnderdog?'🔥':''}</div>${isUnderdog?'<span class="subtext">Bonus x2</span>':''}`;
+                // HTML COMPACTO (V12)
+                pDiv.innerHTML = `${p.name} ${isUnderdog?'🔥':''}`;
                 pDiv.dataset.id = p.id;
                 pDiv.onclick = function() { this.classList.toggle('selected'); window.updateLogFormUI(); };
                 pContainer.appendChild(pDiv);
@@ -393,7 +404,7 @@
                 let wDiv = document.createElement('div');
                 wDiv.className = 'check-item hidden';
                 wDiv.id = 'winner-opt-'+p.id;
-                wDiv.innerHTML = `<div>${p.name} 🏆</div>`;
+                wDiv.innerHTML = `${p.name} 🏆`;
                 wDiv.onclick = function() {
                     document.querySelectorAll('#winner-radios .check-item').forEach(el => el.classList.remove('selected'));
                     this.classList.add('selected');
@@ -433,7 +444,6 @@
                         if (!player.hasUsedDouble) {
                             let bDiv = document.createElement('div');
                             bDiv.className = 'check-item bet-item';
-                            bDiv.innerHTML = `<div>${p.name}</div>`; 
                             bDiv.innerText = `Apostar (${player.name})`;
                             bDiv.dataset.id = pid;
                             bDiv.onclick = function() { this.classList.toggle('selected'); };
@@ -651,12 +661,11 @@
             window.state = {
                 players: newPlayers,
                 history: [],
-                games: JSON.parse(JSON.stringify(GAMES_DB)), // Copia fresca de juegos
+                games: JSON.parse(JSON.stringify(GAMES_DB)), 
                 config: { adminPassword: pwd, points: DEFAULT_CONFIG.points }
             };
             
             await window.saveStateToCloud();
-            // onSnapshot se encargará del resto
         }
 
     </script>
