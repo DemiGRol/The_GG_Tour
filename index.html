@@ -614,30 +614,31 @@
             alert(`✅ Juego "${name}" agregado.`);
         }
 
-        // VERSIÓN CORREGIDA: Espera a que se guarde antes de recargar
-        window.hardReset = async function() {
+        // BUSCA ESTA FUNCIÓN (window.hardReset) Y REEMPLÁZALA POR ESTO:
+        
+        window.hardReset = async function() { // <--- Agrega "async" aquí
             if (!window.checkAdminAuth()) return;
             
             if(confirm("¿BORRAR TODO EL PROGRESO DEL VIAJE? Esto es irreversible.")) { 
-                // Reseteamos la variable local
+                // 1. Preparamos los datos limpios (reseteamos a valores de fábrica)
                 window.state = {
                     players: [],
                     history: [],
-                    games: GAMES_DB,
+                    games: GAMES_DB, // Aquí se cargan los juegos por defecto
                     config: DEFAULT_CONFIG
                 };
                 
-                // AVISO VISUAL: Para que sepas que está trabajando
+                // 2. AVISAMOS QUE ESPERE (cambiamos el cursor)
                 document.body.style.cursor = 'wait'; 
                 
-                // EL CAMBIO CLAVE: "await" obliga a esperar la respuesta de la nube
+                // 3. LA CLAVE: "await" obliga a esperar a que la nube responda
                 await window.saveStateToCloud();
                 
-                // Solo recarga cuando la nube confirma que guardó
+                // 4. Solo ahora, que estamos seguros, recargamos
                 location.reload();
             }
         }
-
+        
         window.resetPlayers = function() { 
             if (!window.checkAdminAuth()) return;
             window.showSetupModal(); 
@@ -680,3 +681,4 @@
 </body>
 
 </html>
+
